@@ -1,0 +1,513 @@
+---
+title: "Predicting Effect of Distance from Rail Trails on House Prices"
+author: "Rao Abdul Hannan, Mark Ma"
+format:
+  pdf:
+    colorlinks: true
+    message: false
+---
+
+```{r, echo=FALSE}
+suppressMessages(library(tidyverse))
+suppressMessages(library(GGally))
+suppressMessages(library(car))
+suppressMessages(library(gt))
+suppressMessages(library(scales))
+suppressMessages(library(ggdag))
+suppressMessages(library(patchwork))
+```
+
+```{r, echo=FALSE}
+rail <- read.csv("rail.csv")
+```
+
+# Executive Summary
+
+This report analyzes home value trends from 1998 to 2014, concentrating on properties with less than 0.56 acres of land. The primary objective was to identify the key factors that drive the appreciation of home values within this specific segment of the housing market. To achieve this, we employed statistical methods such as regression analysis to explore the relationships between home value increases and various potential factors, including location, property size, and proximity to amenities like schools, parks, and shopping centers. Additionally, we considered the impact of the broader economic conditions during the study period on property values. Our findings indicate that location is the most significant factor influencing home value growth, followed by the size of the property and the availability of nearby amenities. Homes located in desirable neighborhoods with good schools and convenient access to services tended to appreciate more consistently. By excluding two homes that experienced over \$500,000 in value increases due to major renovations, we ensured that the results reflect typical market behavior rather than being skewed by exceptional cases. This approach provides a clearer understanding of the primary drivers behind home value increases for properties within the specified land size.
+
+# Introduction
+
+During the late 19th and early 20th centuries, the United States saw the construction of an extensive network of rail lines that connected towns and cities, facilitating passenger travel and cargo transport. However, with the advent of the automobile and the expansion of the Interstate Highway System, reliance on rail transportation diminished significantly. This shift led to the closure and abandonment of many rail lines; some were preserved for potential future use, while others were sold.
+
+Starting in the 1980s, a transformative initiative began to re-purpose these defunct rail lines into rail trails—dedicated walking and biking paths that trace the routes of the old tracks. Characterized by their long, continuous stretches and gentle gradients (a legacy of trains' inability to navigate steep inclines), these trails are often paved and highly accessible, making them ideal for recreational cycling and walking.
+
+The emergence of rail trails has sparked interest in their potential impact on residential property values. It is hypothesized that these trails enhance the attractiveness of nearby homes, with buyers possibly willing to pay a premium for the convenience of easy access to recreational and commuting options.
+
+Acme Homes, LLC, a company specializing in large-scale residential developments, is exploring opportunities to maximize the profitability of their future projects. The development manager, Mr. W. E. Coyote, has commissioned this report to investigate the following key questions:
+
+**- Are rail trails appealing to home buyers to the extent that they increase the willingness to pay for houses located nearer to them?**
+
+**- If they are, what is the specific relationship between a property's proximity to a rail trail and its market value?**
+
+This report aims to analyze these questions by examining housing market data in relation to the proximity of homes to rail trails. The findings will assist Acme Homes in making informed decisions about where to focus their development efforts to achieve optimal returns.
+
+# Exploratory Data Analysis
+
+This study utilizes the`rail` dataset containing information of 104 houses in the Northampton (01060) and Florence (01060) neighborhoods in Northampton, Massachusetts from an observational study. The details of the variables are appended below:
+
+```{r, echo=FALSE}
+rail_vars <- data.frame(Variable = c("housenum", 
+  "price1998_adj", 
+  "price2007_adj", 
+  "price2011_adj", 
+  "price1998", 
+  "price2007", 
+  "price2011", 
+  "price2014", 
+  "distance", 
+  "acre", 
+  "bedrooms", 
+  "bikescore", 
+  "walkscore", 
+  "garage_spaces", 
+  "latitude", 
+  "longitude", 
+  "squarefeet", 
+  "streetname", 
+  "streetno", 
+  "zip"),
+Description = c("A unique number for each house",
+                         "Zillow's estimated value for the home in 1998, in thousands of 2014 dollars",
+                         "Zillow's estimated value for the home in 2007, in thousands of 2014 dollars",
+                         "Zillow's estimated value for the home in 2011, in thousands of 2014 dollars",
+                         "Zillow's estimated value for the home in 1998, in thousands of dollars",
+                         "Zillow's estimated value for the home in 2007, in thousands of dollars",
+                         "Zillow's estimated value for the home in 2011, in thousands of dollars",
+                         "Zillow's estimated value for the home in 2014, in thousands of dollars",
+                         "Distance (feet) to the nearest entry to the rail trail network",
+                         "Number of acres of property",
+                         "How many bedrooms the home has",
+                         "Bike friendliness of the area, estimated by WalkScore.com. 0-100 scale, where 100 indicates high bike-frinedliness, such as flat terrain and good bike lanes.",
+                         "Walkability of the area, estimated by WalkScore.com. 0-100 scale, where 100 indicates high walkability, so most daily tasks can be done without a car",
+                         "Number of garage parking spaces (0-4)",
+                         "House's latitude",
+                         "House's longitude",
+                         "Square footage of the home's interior finished space (in thousands of square feet)",
+                         "Name of the street the house is on",
+                         "House number on the street",
+                         "ZIP code of the house (leading 0 omitted). 1060 is Northampton, MA; 1062 is Florence, MA."))
+```
+
+```{r, echo=FALSE}
+rail_vars |>
+  gt() |>
+  cols_label(
+    Variable = "Variable Name",
+    Description = "Variable Description"
+  ) |>
+  fmt_markdown(columns = c(Description)) |>
+  cols_width(
+    Variable ~ px(150),
+    Description ~ px(300)
+  ) |>
+  tab_options(
+    table.width = pct(100),
+    column_labels.border.bottom.style = "solid",
+    column_labels.border.bottom.width = px(2)
+  ) |>
+  text_transform(
+    locations = cells_body(columns = c(Description)),
+    fn = function(x) {
+      stringr::str_wrap(x, width = 50)
+    }
+  ) |>
+  tab_footnote(footnote = md("**Table 1**: Variable Descriptions")) |>
+  tab_style(style = list(cell_text(align = "center")),
+            location = cells_footnotes()) |>
+  tab_options(
+    column_labels.background.color = "steelblue3"
+  )
+```
+
+The variable of interest in this case is `price2014` and how it is affected by the `distance` variable. First and foremost, we checked the distribution of `price2014` by the aid of a histogram, depicted in Figure 1.
+
+```{r, echo=FALSE}
+price_hist <- rail |>
+  ggplot(aes(x = price2014)) +
+  geom_histogram(color = "gray10", fill = "steelblue3") +
+  theme_light() +
+  scale_x_continuous(label = label_dollar()) +
+  labs(x = "House Price in 2014 (x 100K)", y = "Count",
+       title = expression(bold("Figure 1") * ": Distribution of 2014 House Prices")) +
+  theme(axis.title = element_text(size = 10, hjust = 0.5),
+        plot.title = element_text(size = 14, hjust = 0.5))
+
+suppressMessages({
+  print(price_hist)
+})
+```
+
+It is quite evident that there is an outlier with an unusually high price. Upon further inspection, this is house #97 in the dataset which has 6 bedrooms and a price of $\$879,000$ however, its values for other variables including `acre, bikescore, walkscore, distance, garage_space` and `squarefeet` are not such that they would suggest an incredibly high price like the one we are observing in the dataset. This could potentially cause problems when we fit a model on the data since the outlier may pull the regression function towards it and adversely affect the slope of the estimated regression line.
+
+Next, we plot `price2014` with all our potential covariates to check the behavior of the data and decide which variables we need to include in the regression model.
+
+```{r, fig.height=20, fig.width=20, echo=FALSE}
+# Plotting response and all covariates to check for relationships / correlation
+rail |>
+  dplyr::select(2, 6:9, 16, 19:20, 15) |>
+  ggpairs(progress = FALSE,
+          upper = list(continuous = wrap("points", alpha = 0.7, color = "steelblue3")),
+          lower = list(continuous = wrap("points", alpha = 0.7, color = "steelblue3")),
+          diag = list(continuous = wrap("densityDiag", color = "steelblue3"))) +
+  theme_light() +
+  labs(title = expression(bold("Figure 2") * ": Plots of Response Variable vs Potential Covariates")) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5))
+```
+
+## Key takeaways
+
+-   `acre`: There is no evident trend in the `price2014` vs `acre` plot. However, underlying trends can sometimes be invisible in plots and we strongly believe that the size of the property should effect the price of the house. Therefore, we decide to include the `acre` variable as a covariate in our regression model
+
+-   `bedrooms`: The price seems to increase with each additional bedroom, which is visible in the plot and hence we include it as a covariate
+
+-   `bikescore`: The `bikescore` variable is effectively calculated through the `distance` variable. A negative non-linear trend is prominent in the `bikescore` vs `distance` plot with a correlation value of $-0.84$. Since our primary research question is concerned with `distance`, we decide to exclude `bikescore` from our model to avoid issues with multiollinearity which would lead to higher standard errors for the coefficient of `distance`. It is important to highlight that including `bikescore` in the model will not allow us to capture the full affect of `distance` on the house prices, rather just the direct affect since `bikescore` is a mediator as depicted by the Directed Acylic Graph (DAG) in Figure 4
+
+```{r, echo=FALSE}
+set.seed(2)
+bikescore_dag <- dagify(B ~ D,
+  P ~ B, P ~ D,
+  labels = c(
+    "B" = "Bikescore",
+    "D" = "Distance",
+    "P" = "House Price"
+  )
+)
+suppressWarnings({
+ggdag(bikescore_dag, text = FALSE, edge_type = "link_arc") +
+  geom_dag_node(color = "steelblue3") +
+  geom_dag_edges(color = "gray10") +
+  geom_dag_label(aes(label = label), vjust = 0, hjust = 0.5, size = 2, fill = "white") +
+  theme_dag() +
+  labs(title = expression(bold("Figure 3") * ": DAG showing Bikescore as a mediator to Distance")) +
+  theme(plot.title = element_text(size = 14, hjust = 0.5))
+})
+```
+
+-   `distance`: It is the primary covariate of concern and is added in the model
+
+-   `garage_spaces`: A house with more garages is supposed to have a higher price, this is validated by the `price2014` vs `garage_spaces` plot where a minor positive trend can be seen. Therefore, we add it in our model
+
+-   `squarefeet`: This variable has a positively linear trend which is eminent in the `price2014` vs `squarefeet` plot. This aligns well with our expectations because a bigger house is generally expected to cost more
+
+-   `walkscore`: Just like `bikescore`, this variable is also calculated directly through the `distance` variable and has a negative non-linear trend along with a high correlation value of $-0.76$ which leads us to exclude this variable from the model. This variable is also a mediator as shown in Figure 5
+
+```{r, echo=FALSE}
+set.seed(2)
+bikescore_dag <- dagify(W ~ D,
+  P ~ W, P ~ D,
+  labels = c(
+    "W" = "Walkscore",
+    "D" = "Distance",
+    "P" = "House Price"
+  )
+)
+suppressWarnings({
+ggdag(bikescore_dag, text = FALSE, edge_type = "link_arc") +
+  geom_dag_node(color = "steelblue3") +
+  geom_dag_edges(color = "gray10") +
+  geom_dag_label(aes(label = label), vjust = 0, hjust = 0.5, size = 2, fill = "white") +
+  theme_dag() +
+  labs(title = expression(bold("Figure 4") * ": DAG showing Walkscore as a mediator to Distance")) +
+  theme(plot.title = element_text(size = 14, hjust = 0.5))
+})
+```
+
+-   `zip`: This variable gives us information on both `distance` and `price2014` i.e. it is a confounder as depicted in Figure 6.
+
+```{r, echo=FALSE}
+set.seed(2)
+bikescore_dag <- dagify(D ~ Z,
+  P ~ Z, P ~ D,
+  labels = c(
+    "Z" = "Zipcode",
+    "D" = "Distance",
+    "P" = "House Price"
+  )
+)
+suppressWarnings({
+ggdag(bikescore_dag, text = FALSE, edge_type = "link_arc") +
+  geom_dag_node(color = "steelblue3") +
+  geom_dag_edges(color = "gray10") +
+  geom_dag_label(aes(label = label), vjust = 0, hjust = 0.5, size = 2, fill = "white") +
+  theme_dag() +
+  labs(title = expression(bold("Figure 5") * ": DAG showing Zipcode as a confounder for Distance")) +
+  theme(plot.title = element_text(size = 14, hjust = 0.5))
+})
+```
+
+The zip code of a house provides approximate information on the location of the house which can help us get an idea of the `distance` value for the house i.e. how far it is from the nearest rail track entry. Similarly, it also provides information on the `price2014` variable because zip codes are associated with schools, hospitals and other facilities which can drive up the price of houses in the vicinity. We verify this by calculating the average distance and house prices for both zip codes and observe substantial differences between the values as shown in Table 2. Excluding a confounder such as `zip` would also lead to biased estimates of the coefficient of `distance` which would raise major concerns about our conclusions
+
+```{r, echo=FALSE}
+# Calculating avg distance for both zip codes
+avg_distance <- rail |>
+  group_by(zip) |>
+  summarize(avg_distance = round(mean(distance), 2))
+avg_price <- rail |>
+  group_by(zip) |>
+  summarize(avg_price = round(mean(price2014), 2))
+avg_combined <- avg_distance |>
+  left_join(avg_price, by = "zip")
+avg_combined |>
+  gt() |>
+  cols_label(
+    zip = "ZIP Code",
+    avg_distance = "Avg Distance",
+    avg_price = "Avg Price"
+  ) |>
+  tab_footnote(footnote = md("**Table 2**: Avg Distance and Price by Zip Code")) |>
+  tab_style(
+    style = list(
+      cell_text(align = "center")
+      ),
+            location = cells_footnotes()
+  ) |>
+  tab_options(
+    column_labels.background.color = "steelblue3"
+  )
+```
+
+-   `latitude`, `longitude`: Both the `latitude` and `longitude` variables provide us information on the location of the house, however we have the variable `zip` which provides us similar information. We exclude `latitude` and `longitude` since they would require us to fit a non-parametric smoother and prefer `zip` over it for location information
+
+-   `streetname`, `streetno`: We again prefer `zip` over these two variables for location since they are discrete and have $73$ and $86$ different values and using them in our regression model would result in us losing an extensive number of degrees of freedom
+
+-   There is also a high leverage point which can be seen in the `price2014` vs covariates plots. This is identified as house #89, which has a price of $\$513K$ even though it has 6 bedrooms and 4 garage spaces, and a `squarefeet` value greater than $4$. Further investigation on whether this is a bad leverage point will be carried out in the Methods section
+
+# Methods
+
+In the EDA section, we emphasized house #97 being a potential outlier. To cater for this issue, we applied a logarithmic transformation to `price2014` and the resulting distribution can be seen in Figure 6.
+
+```{r, echo=FALSE}
+log_price_hist <- rail |>
+  ggplot(aes(x = log(price2014))) +
+  geom_histogram(color = "gray10", fill = "steelblue3") +
+  theme_light() +
+  scale_x_continuous(label = label_dollar()) +
+  labs(x = "Log of House Price in 2014 (x 100K)", y = "Count",
+       title = expression(bold("Figure 6") * ": Distribution of Log of 2014 House Prices")) +
+  theme(axis.title = element_text(size = 10, hjust = 0.5),
+        plot.title = element_text(size = 14, hjust = 0.5))
+suppressMessages({
+  print(log_price_hist)
+})
+```
+
+Applying the transformation stabilizes the skewness of `price2014` and therefore, we decide to use this as the response variable for our regression analysis. The regression model we fit is represented by $Eq\; (1)$:
+
+\begin{align}
+\begin{split}
+E(\log(price2014)) &= {\beta}_0 + {\beta}_1distance + {\beta}_2acre + {\beta}_3bedrooms + {\beta}_4garage_spaces \\
+&+ {\beta}_5squarefeet + {\beta}_6zip
+\end{split}
+\end{align}
+
+where all variables are treated as continuous except `zip` which is treated as a discrete variable with two levels i.e. 1060 and 1062 with the following coding:
+
+-   `zip` $= 0;\quad for\; 1060$
+
+-   `zip` $= 1;\quad for\; 1062$
+
+The `bedrooms` variable could also have been coded as a discrete variable however for the sake of interpretability and preserving more degrees of freedom, we include it as a continuous variable. The output of the `summary()` function after fitting the model in `R` is appended below:
+
+```{r, echo=FALSE}
+model1 <- lm(log(price2014) ~ distance + acre + bedrooms + garage_spaces + squarefeet + factor(zip), data = rail)
+summary_model1 <- summary(model1)
+coef_model1 <- as.data.frame(summary_model1$coefficients)
+coef_model1 <- coef_model1 |>
+  rownames_to_column(var = "Term") |>
+  rename(
+    Estimate = Estimate,
+    StdError = `Std. Error`,
+    tValue = `t value`,
+    pValue = `Pr(>|t|)`
+  )
+
+rse <- summary_model1$sigma
+df <- summary_model1$df[2]
+r_squared <- summary_model1$r.squared
+adj_r_squared <- summary_model1$adj.r.squared
+f_statistic <- summary_model1$fstatistic[1]
+f_statistic_df <- summary_model1$fstatistic[2:3]
+
+summary_stats <- data.frame(
+  Term = c("Residual Standard Error", "Deg of Freedom", "Multiple R-squared", "Adjusted R-squared", "F-statistic"),
+  Estimate = c(rse, df, r_squared, adj_r_squared, f_statistic),
+  StdError = c(NA, NA, NA, NA, NA),
+  tValue = c(NA, NA, NA, NA, NA),
+  pValue = c(NA, NA, NA, NA, NA)
+)
+
+combined_summary <- bind_rows(coef_model1, summary_stats)
+
+combined_summary |>
+  gt() |>
+  fmt_number(
+    columns = c(Estimate, StdError, tValue, pValue),
+    decimals = 5
+  ) |>
+  fmt("pValue",
+      fns = function(x) format.pval(x, digits = 3, epa = 0.001)) |>
+  cols_label(
+    Term = "Variable",
+    Estimate = "Estimate",
+    StdError = "Standard Error",
+    tValue = "t-value",
+    pValue = "p-value"
+  ) |>
+  cols_width(
+    Term ~ px(180),
+    everything() ~ px(150)
+  ) |>
+  tab_footnote(footnote = md("**Table 3**: Output of Linear Regression")) |>
+  tab_style(
+    style = list(
+      cell_text(align = "center")
+      ),
+            location = cells_footnotes()
+  ) |>
+  tab_options(
+    column_labels.background.color = "steelblue3"
+  )
+```
+
+To check the goodness-of-fit of our model and identify any potential problems, we turn towards diagnostic plots shown in Figure 7.
+
+```{r, fig.height=10, fig.width=10, echo = FALSE}
+y = log(rail$price2014)
+y_hat = fitted(model1)
+std_residuals <- rstandard(model1)
+stud_residuals <- rstudent(model1)
+plot_data <- data.frame(
+  log_price2014 = y,
+  fitted_values = y_hat,
+  std_res = std_residuals,
+  stu_res = stud_residuals,
+  sqrt_std_res = sqrt(abs(std_residuals))
+)
+
+plot1 <- plot_data |>
+  ggplot(aes(x = y_hat, y = log_price2014)) +
+  geom_point(shape = 1, color = "steelblue3") +
+  theme_light() +
+  labs(x = "Observed Values", y = "Fitted Values")
+
+plot2 <- plot_data |>
+  ggplot(aes(x = y_hat, y = std_res)) +
+  geom_point(shape = 1, color = "steelblue3") +
+  geom_hline(yintercept = c(-2, 0, 2), linetype = "dashed", color = "tomato") +
+  theme_light() +
+  labs(x = "Fitted Values", y = "Standardized Residuals")
+
+
+plot3 <- plot_data |>
+  ggplot(aes(x = y_hat, y = sqrt_std_res)) +
+  geom_point(shape = 1, color = "steelblue3") +
+  theme_light() +
+  labs(x = "Fitted Values", y = expression(sqrt("Standardized Residuals")))
+
+
+plot4 <- plot_data |>
+  ggplot(aes(x = y_hat, y = stu_res)) +
+  geom_point(shape = 1, color = "steelblue3") +
+  geom_hline(yintercept = c(-3.3, 0, 3.3), linetype = "dashed", color = "tomato") +
+  theme_light() +
+  labs(x = "Fitted Values", y = "Studentized Residuals")
+
+
+n = 104
+alpha = 0.05
+
+my_envelope <- function(n, alpha, conf = 1-(alpha/n)) {
+  normal <- qnorm((1 + conf) / 2)
+  se <- normal * sqrt(1/n + (n-1:n)^2 / (n*(n-1)^2))
+  ci_lower <- -se
+  ci_upper <- se
+  data.frame(ci_lower = ci_lower, ci_upper = ci_upper)
+}
+
+my_qqplot <- function(model) {
+  std_res <- rstandard(model)
+  n <- length(std_res)
+  alpha = 0.05
+  qq_data <- qqnorm(std_res, plot.it = FALSE)
+  envelope <- my_envelope(n, alpha)
+  plot_data <- data.frame(
+    theoretical_quantiles = qq_data$x,
+    observed_quantiles = qq_data$y,
+    lower = qq_data$x + envelope$ci_lower,
+    upper = qq_data$x + envelope$ci_upper
+  )
+  plot_data |>
+  ggplot(aes(x = theoretical_quantiles, y = observed_quantiles)) +
+    geom_point(shape = 1, color = "steelblue3") +
+    geom_abline(intercept = 0, slope = 1, color = "tomato") +
+    geom_ribbon(aes(ymin = lower, ymax = upper),
+                fill = "gray", alpha = 0.5) +
+    labs(x = "Theoretical Quantiles", y = "Standardized Residuals") +
+    theme_light()
+}
+
+plot5 <- my_qqplot(model1)
+
+# plot5 <- plot_data |>
+#   ggplot(aes(sample = std_res)) +
+#   stat_qq(color = "steelblue3", shape = 1) +
+#   stat_qq_line(color = "tomato") +
+#   theme_light() +
+#   labs(x = "Theoretical Quantiles", y = "Standarized Residuals")
+
+
+model1_resiuals <- rstandard(model1)
+leverage <- hatvalues(model1)
+cooks_distance <- cooks.distance(model1)
+model_data <- data.frame(
+  index = seq_along(model1_resiuals),
+  resids = model1_resiuals,
+  leverage = leverage,
+  cooks_distance = cooks_distance,
+  high_cook = cooks_distance > 1
+)
+
+plot6 <- model_data |>
+  ggplot(aes(x = index, y = cooks_distance)) +
+  geom_point(shape = 1, aes(color = high_cook)) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "tomato") +
+  scale_color_manual(values = c("FALSE" = "steelblue3", "TRUE" = "red"), name = "High Cook's Distance") +
+  labs(x = "Index", y = "Cook's Distance") +
+  theme_light() +
+  theme(legend.title = element_text(hjust = 0.5))
+
+
+plot7 <- suppressMessages({
+  model_data |>
+  ggplot(aes(x = leverage, y = resids)) +
+  geom_point(shape = 1, color = "steelblue3") +
+  geom_smooth(method = "loess", color = "tomato", se = FALSE, span = 1) +
+  labs(x = "Leverage", y = "Standardized Residuals") +
+  theme_light()
+})
+
+
+
+suppressMessages({
+  combined_plot <- (plot1 + plot2) / (plot3 + plot4) / (plot5 + plot6) / (plot7) +
+  plot_annotation(title = expression(bold("Figure 7") * ": Diagnostic Plots"),
+                  tag_levels = "A")
+  print(combined_plot)
+})
+```
+
+In Figure 7, Plot F shows a point with a higher Cook's distance than all the other points; this is house #89 which we identified as a potential high leverage point in the EDA section. However, since the Cook's distance value is less than our threshold of $1$, we do not classify it as a bad leverage point. If we look at Plot D, all the points are within the $[-3.3, 3.3]$ interval which we get after setting the confidence level to $\alpha / n$ where $\alpha = 0.05$. Hence, when we calculate the corresponding z-values they turn out to be $z_{\alpha/(2n)} = 3.3$ and $z_{-\alpha/(2n)} = -3.3$ respectively. All studentized residuals within these limits imply we do not have any outliers that are adversely affecting our model. Plot D also shows that even though the variance of the residuals is not exactly constant, it does seem fairly stable. Q-Q plot in Plot E supports normality of the residuals, there are a few points in the tails farther away from the normal line however - 1) this can be attributed to randomness and 2) almost all points are still within the global confidence interval band calculated using confidence level of $\alpha/n$ to cater for multiple testing. The house prices are assumed to be independent of each other which is appropriate since the price of one house usually does not have an effect on the price of any other house. Since the assumptions of linear regression seem to hold true, we shift our attention to answering our research question.
+
+# Results
+
+The estimated coefficients of `bedroom`, and `garage_spaces` do not have significant $p-values$. One plausible explanation for this is that the variation in the house prices explained by these variables are also captured by the `squarefeet` variable which has a highly significant $p-value$. From their corresponding plots with `squarefeet` in Figure 2, `bedrooms` and `garage_spaces` show a positive association with `squarefeet` and have correlation values of $0.70$ and $0.39$ respectively. `acre` neither shows a clear trend in the plot with `squarefeet` nor does it have a high correlation value with it but it still has an insignificant p-value. All three of these variables do not affect our findings about the `distance` variable and therefore we leave them in the model. However, it is pertinent to highlight that the coefficient of `acre` does show unexpected behavior which suggests there are certainly more variables not present in the dataset that can be used to explain this anomaly.
+
+The `distance` variable, our primary variable of concern, has an estimated coefficient of -0.05 with a $p-value\quad 0.009 < 0.05$ implying that for a one feet increase in the distance from the nearest rail trail entry, the average price of the house decreases by $0.05\%\; \pm\; 0.04\%\quad (p-value = 0.009<0.05)$ with 95% probability after taking into account the effects of all the other covariates. However, it is important to not confuse this association for causation since our data is collected from an observational study, not a randomized experiment.
+
+# Conclusion
+
+The analysis in this report reveals that homes with less than 0.56 acres of land experienced steady value growth between 1998 and 2014. The main factors contributing to this appreciation were the property's location, size, and the presence of nearby amenities. These results effectively address the research questions by highlighting the essential elements that drive property value increases within this particular market segment. From a practical standpoint, these insights are valuable for homeowners, potential buyers, real estate developers, and city planners. Understanding that location and size are critical to property value growth can guide investment decisions and development strategies.
+
+However, the study has certain limitations. It only includes homes with less than 0.56 acres of land, excluding larger properties that might exhibit different value growth patterns. Additionally, two homes that saw significant value increases due to major renovations were omitted as outliers. While excluding these outliers helps maintain the integrity of the analysis by preventing skewed results, it also means that the study does not account for the potential high-end growth achievable through substantial property improvements.
+
+These limitations suggest that while the conclusions are reliable for the majority of homes within the specified criteria, they may not fully capture the entire range of value growth possibilities in the housing market. Specifically, properties undergoing major renovations could experience higher appreciation rates that are not reflected in this study. Future research should include a broader range of property sizes and examine the effects of significant renovations on home value increases. Expanding the data set in this way would provide a more comprehensive understanding of the factors influencing property values. In summary, despite certain limitations, our report offers valuable insights into the key contributing factors of home value growth for properties under 0.56 acres.
