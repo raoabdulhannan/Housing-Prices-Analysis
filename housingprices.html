@@ -1,0 +1,2333 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Rao Abdul Hannan, Mark Ma">
+
+<title>Predicting Effect of Distance from Rail Trails on House Prices</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="housingprices_files/libs/clipboard/clipboard.min.js"></script>
+<script src="housingprices_files/libs/quarto-html/quarto.js"></script>
+<script src="housingprices_files/libs/quarto-html/popper.min.js"></script>
+<script src="housingprices_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="housingprices_files/libs/quarto-html/anchor.min.js"></script>
+<link href="housingprices_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="housingprices_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="housingprices_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="housingprices_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="housingprices_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicting Effect of Distance from Rail Trails on House Prices</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Rao Abdul Hannan, Mark Ma </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="executive-summary" class="level1">
+<h1>Executive Summary</h1>
+<p>This report analyzes home value trends from 1998 to 2014, concentrating on properties with less than 0.56 acres of land. The primary objective was to identify the key factors that drive the appreciation of home values within this specific segment of the housing market. To achieve this, we employed statistical methods such as regression analysis to explore the relationships between home value increases and various potential factors, including location, property size, and proximity to amenities like schools, parks, and shopping centers. Additionally, we considered the impact of the broader economic conditions during the study period on property values. We found that the closer a home is to the rail trail, the more its value increases. Specifically, for every foot nearer to the trail, a home’s price goes up by about 0.05%. This effect is stronger than that of property size — while larger homes do sell for more, proximity to the trail has a bigger impact. By excluding two homes that experienced over $500,000 in value increases due to major renovations, we ensured that the results reflect typical market behavior rather than being skewed by exceptional cases. This approach provides a clearer understanding of the primary drivers behind home value increases for properties within the specified land size.</p>
+</section>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>During the late 19th and early 20th centuries, the United States saw the construction of an extensive network of rail lines that connected towns and cities, facilitating passenger travel and cargo transport. However, with the advent of the automobile and the expansion of the Interstate Highway System, reliance on rail transportation diminished significantly. This shift led to the closure and abandonment of many rail lines; some were preserved for potential future use, while others were sold.</p>
+<p>Starting in the 1980s, a transformative initiative began to re-purpose these defunct rail lines into rail trails—dedicated walking and biking paths that trace the routes of the old tracks. Characterized by their long, continuous stretches and gentle gradients (a legacy of trains’ inability to navigate steep inclines), these trails are often paved and highly accessible, making them ideal for recreational cycling and walking.</p>
+<p>The emergence of rail trails has sparked interest in their potential impact on residential property values. It is hypothesized that these trails enhance the attractiveness of nearby homes, with buyers possibly willing to pay a premium for the convenience of easy access to recreational and commuting options.</p>
+<p>Acme Homes, LLC, a company specializing in large-scale residential developments, is exploring opportunities to maximize the profitability of their future projects. The development manager, Mr.&nbsp;W. E. Coyote, has commissioned this report to investigate the following key questions:</p>
+<p><strong>- Are rail trails appealing to home buyers to the extent that they increase the willingness to pay for houses located nearer to them?</strong></p>
+<p><strong>- If they are, what is the specific relationship between a property’s proximity to a rail trail and its market value?</strong></p>
+<p>This report aims to analyze these questions by examining housing market data in relation to the proximity of homes to rail trails. The findings will assist Acme Homes in making informed decisions about where to focus their development efforts to achieve optimal returns.</p>
+</section>
+<section id="exploratory-data-analysis" class="level1">
+<h1>Exploratory Data Analysis</h1>
+<p>This study utilizes the <code>rail</code> data set containing information of 104 houses in the Northampton (01060) and Florence (01060) neighborhoods in Northampton, Massachusetts from an observational study. The details of the variables are appended below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="urpyslwyem" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#urpyslwyem table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#urpyslwyem thead, #urpyslwyem tbody, #urpyslwyem tfoot, #urpyslwyem tr, #urpyslwyem td, #urpyslwyem th {
+  border-style: none;
+}
+
+#urpyslwyem p {
+  margin: 0;
+  padding: 0;
+}
+
+#urpyslwyem .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: 100%;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#urpyslwyem .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#urpyslwyem .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#urpyslwyem .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_col_heading {
+  color: #FFFFFF;
+  background-color: #4F94CD;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#urpyslwyem .gt_column_spanner_outer {
+  color: #FFFFFF;
+  background-color: #4F94CD;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#urpyslwyem .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#urpyslwyem .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#urpyslwyem .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#urpyslwyem .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#urpyslwyem .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#urpyslwyem .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#urpyslwyem .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#urpyslwyem .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#urpyslwyem .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#urpyslwyem .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#urpyslwyem .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#urpyslwyem .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#urpyslwyem .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#urpyslwyem .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#urpyslwyem .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#urpyslwyem .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#urpyslwyem .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#urpyslwyem .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#urpyslwyem .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#urpyslwyem .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#urpyslwyem .gt_left {
+  text-align: left;
+}
+
+#urpyslwyem .gt_center {
+  text-align: center;
+}
+
+#urpyslwyem .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#urpyslwyem .gt_font_normal {
+  font-weight: normal;
+}
+
+#urpyslwyem .gt_font_bold {
+  font-weight: bold;
+}
+
+#urpyslwyem .gt_font_italic {
+  font-style: italic;
+}
+
+#urpyslwyem .gt_super {
+  font-size: 65%;
+}
+
+#urpyslwyem .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#urpyslwyem .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#urpyslwyem .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#urpyslwyem .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#urpyslwyem .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#urpyslwyem .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#urpyslwyem .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#urpyslwyem .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#urpyslwyem div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="header gt_col_headings">
+<th id="Variable Name" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable Name</th>
+<th id="Variable Description" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable Description</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">housenum</td>
+<td class="gt_row gt_left" headers="Description"><p>A unique number for each house</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">price1998_adj</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 1998, in thousands of 2014 dollars</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">price2007_adj</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 2007, in thousands of 2014 dollars</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">price2011_adj</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 2011, in thousands of 2014 dollars</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">price1998</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 1998, in thousands of dollars</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">price2007</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 2007, in thousands of dollars</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">price2011</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 2011, in thousands of dollars</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">price2014</td>
+<td class="gt_row gt_left" headers="Description"><p>Zillow’s estimated value for the home in 2014, in thousands of dollars</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">distance</td>
+<td class="gt_row gt_left" headers="Description"><p>Distance (feet) to the nearest entry to the rail trail network</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">acre</td>
+<td class="gt_row gt_left" headers="Description"><p>Number of acres of property</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">bedrooms</td>
+<td class="gt_row gt_left" headers="Description"><p>How many bedrooms the home has</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">bikescore</td>
+<td class="gt_row gt_left" headers="Description"><p>Bike friendliness of the area, estimated by WalkScore.com. 0-100 scale, where 100 indicates high bike-frinedliness, such as flat terrain and good bike lanes.</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">walkscore</td>
+<td class="gt_row gt_left" headers="Description"><p>Walkability of the area, estimated by WalkScore.com. 0-100 scale, where 100 indicates high walkability, so most daily tasks can be done without a car</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">garage_spaces</td>
+<td class="gt_row gt_left" headers="Description"><p>Number of garage parking spaces (0-4)</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">latitude</td>
+<td class="gt_row gt_left" headers="Description"><p>House’s latitude</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">longitude</td>
+<td class="gt_row gt_left" headers="Description"><p>House’s longitude</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">squarefeet</td>
+<td class="gt_row gt_left" headers="Description"><p>Square footage of the home’s interior finished space (in thousands of square feet)</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">streetname</td>
+<td class="gt_row gt_left" headers="Description"><p>Name of the street the house is on</p></td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Variable">streetno</td>
+<td class="gt_row gt_left" headers="Description"><p>House number on the street</p></td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Variable">zip</td>
+<td class="gt_row gt_left" headers="Description"><p>ZIP code of the house (leading 0 omitted). 1060 is Northampton, MA; 1062 is Florence, MA.</p></td>
+</tr>
+</tbody><tfoot class="gt_footnotes">
+<tr class="odd">
+<td colspan="2" class="gt_footnote" style="text-align: center;"><p><strong>Table 1</strong>: Variable Descriptions</p></td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+</div>
+<p>The variable of interest in this case is <code>price2014</code> and how it is affected by the <code>distance</code> variable. First and foremost, we checked the distribution of <code>price2014</code> by the aid of a histogram, depicted in Figure 1.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It is quite evident that there is an outlier with an unusually high price, as highlighted in Figure 1. Upon further inspection, this is house #97 in the data set which has 6 bedrooms and a price of <span class="math inline">\(\$879,000\)</span> however, its values for other variables including <code>acre, bikescore, walkscore, distance, garage_space</code> and <code>squarefeet</code> are not such that they would suggest an incredibly high price like the one we are observing in the data set. This could potentially cause problems when we fit a model on the data since the outlier may pull the regression function towards it and adversely affect the slope of the estimated regression line.</p>
+<p>Next, we critically evaluate <code>price2014</code> against all our potential covariates to check the behavior of the data and decide which variables we need to include in the regression model.</p>
+<section id="key-takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="key-takeaways">Key takeaways</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><code>acre</code>: There is no evident trend in the <code>price2014</code> vs <code>acre</code> plot displayed in Figure 2. However, underlying trends can sometimes be invisible in plots and we strongly believe that the size of the property should effect the price of the house. Therefore, we decide to include the <code>acre</code> variable as a covariate in our regression model</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><code>bedrooms</code>: The price seems to increase with each additional bedroom, which is visible in the Figure 3 and hence we include it as a covariate</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><code>bikescore</code>: The <code>bikescore</code> variable is effectively calculated through the <code>distance</code> variable. A negative non-linear trend is prominent in the <code>bikescore</code> vs <code>distance</code> plot in Figure 4 with a correlation value of <span class="math inline">\(-0.836\)</span>. Since our primary research question is concerned with <code>distance</code>, we decide to exclude <code>bikescore</code> from our model to avoid issues with multi-collinearity which would lead to higher standard errors for the coefficient of <code>distance</code>, resulting in wider confidence intervals which significantly limit our capability to make inference about the effect of <code>distance</code> on <code>price2014</code>. It is also important to highlight that including <code>bikescore</code> in the model will not allow us to capture the full affect of <code>distance</code> on the house prices, rather just the direct affect since <code>bikescore</code> is a mediator as depicted by the Directed Acylic Graph (DAG) in Figure 5</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+<ul>
+<li><code>distance</code>: It is the primary covariate of concern and is therefore added in the model</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><code>garage_spaces</code>: A house with more garages is expected to have a higher price. This is validated by the <code>price2014</code> vs <code>garage_spaces</code> plot in Figure 6 where a minor positive trend can be seen, therefore we add it in our model </li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><code>squarefeet</code>: This variable has a positively linear trend which is eminent in the <code>price2014</code> vs <code>squarefeet</code> plot in Figure 7. This aligns well with our expectations because a bigger house is generally expected to cost more </li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><code>walkscore</code>: Just like <code>bikescore</code>, this variable is also calculated directly through the <code>distance</code> variable and has a negative non-linear trend observed in Figure 8 along with a high correlation value of <span class="math inline">\(-0.761\)</span>, which leads us to exclude this variable from the model. This variable is also a mediator as displayed in Figure 9</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+<ul>
+<li><code>zip</code>: This variable gives us information on both <code>distance</code> and <code>price2014</code> i.e.&nbsp;it is a confounder as depicted in Figure 10.</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The zip code of a house provides approximate information on the location of the house which can help us get an idea of the <code>distance</code> value for the house i.e.&nbsp;how far it is from the nearest rail track entry. Similarly, it also provides information on the <code>price2014</code> variable because zip codes are associated with schools, hospitals and other facilities which can drive up the price of houses in the vicinity. We verify this by calculating the average distance and house prices for both zip codes and observe substantial differences between the values as shown in Table 2. Excluding a confounder such as <code>zip</code> would also lead to biased estimates of the coefficient of <code>distance</code> which would raise major concerns about our conclusions.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="uobttyvtrf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#uobttyvtrf table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#uobttyvtrf thead, #uobttyvtrf tbody, #uobttyvtrf tfoot, #uobttyvtrf tr, #uobttyvtrf td, #uobttyvtrf th {
+  border-style: none;
+}
+
+#uobttyvtrf p {
+  margin: 0;
+  padding: 0;
+}
+
+#uobttyvtrf .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#uobttyvtrf .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#uobttyvtrf .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#uobttyvtrf .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_col_heading {
+  color: #FFFFFF;
+  background-color: #4F94CD;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#uobttyvtrf .gt_column_spanner_outer {
+  color: #FFFFFF;
+  background-color: #4F94CD;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#uobttyvtrf .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#uobttyvtrf .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#uobttyvtrf .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#uobttyvtrf .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#uobttyvtrf .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#uobttyvtrf .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#uobttyvtrf .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#uobttyvtrf .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#uobttyvtrf .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#uobttyvtrf .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uobttyvtrf .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#uobttyvtrf .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#uobttyvtrf .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#uobttyvtrf .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uobttyvtrf .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#uobttyvtrf .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uobttyvtrf .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#uobttyvtrf .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uobttyvtrf .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uobttyvtrf .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uobttyvtrf .gt_left {
+  text-align: left;
+}
+
+#uobttyvtrf .gt_center {
+  text-align: center;
+}
+
+#uobttyvtrf .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#uobttyvtrf .gt_font_normal {
+  font-weight: normal;
+}
+
+#uobttyvtrf .gt_font_bold {
+  font-weight: bold;
+}
+
+#uobttyvtrf .gt_font_italic {
+  font-style: italic;
+}
+
+#uobttyvtrf .gt_super {
+  font-size: 65%;
+}
+
+#uobttyvtrf .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#uobttyvtrf .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#uobttyvtrf .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#uobttyvtrf .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#uobttyvtrf .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#uobttyvtrf .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#uobttyvtrf .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#uobttyvtrf .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#uobttyvtrf div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header gt_col_headings">
+<th id="ZIP Code" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">ZIP Code</th>
+<th id="Avg Distance" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Avg Distance</th>
+<th id="Avg Price" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Avg Price</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="zip">1060</td>
+<td class="gt_row gt_right" headers="avg_distance">0.77</td>
+<td class="gt_row gt_right" headers="avg_price">338.9</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="zip">1062</td>
+<td class="gt_row gt_right" headers="avg_distance">1.36</td>
+<td class="gt_row gt_right" headers="avg_price">260.8</td>
+</tr>
+</tbody><tfoot class="gt_footnotes">
+<tr class="odd">
+<td colspan="3" class="gt_footnote" style="text-align: center;"><p><strong>Table 2</strong>: Avg Distance and Price by Zip Code</p></td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+<ul>
+<li><p><code>latitude</code>, <code>longitude</code>: Both the <code>latitude</code> and <code>longitude</code> variables provide us information on the location of the house, however we have the variable <code>zip</code> which provides us similar information. We exclude <code>latitude</code> and <code>longitude</code> since they would require us to fit a non-parametric smoother and prefer <code>zip</code> over it for location information</p></li>
+<li><p><code>streetname</code>, <code>streetno</code>: We again prefer <code>zip</code> over these two variables for location since they are discrete and have <span class="math inline">\(73\)</span> and <span class="math inline">\(86\)</span> different values and using them in our regression model would result in us losing an extensive number of degrees of freedom</p></li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><p><code>squarefeet</code> has a positive association with both <code>bedrooms</code> and <code>garage_spaces</code> as displayed by the plots and correlation values in Figure 11, which is reasonable since a bigger house is expected to have more bedrooms and garage spaces. This observation will be referenced in the Results section later on</p></li>
+<li><p>There is also a high leverage point which can be seen in all the <code>price2014</code> vs covariates plots displayed above. This is identified as house #89, which has a price of <span class="math inline">\(\$513K\)</span> even though it has 6 bedrooms and 4 garage spaces, and a <code>squarefeet</code> value greater than <span class="math inline">\(4\)</span>. Further investigation on whether this is a bad leverage point will be carried out in the Methods section</p></li>
+</ul>
+</section>
+</section>
+<section id="methods" class="level1">
+<h1>Methods</h1>
+<p>In the EDA section, we emphasized house #97 being a potential outlier. To cater for this issue, we applied a logarithmic transformation to <code>price2014</code> and the resulting distribution can be seen in Figure 13.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Applying the transformation stabilizes the skewness of <code>price2014</code> and therefore, we decide to use this as the response variable for our regression analysis. The regression model we fit is represented by <span class="math inline">\(Eq\; (1)\)</span>:</p>
+<p><span class="math display">\[\begin{align}
+\begin{split}
+E(\log(price2014)) &amp;= {\beta}_0 + {\beta}_1distance + {\beta}_2acre + {\beta}_3bedrooms + {\beta}_4garagespaces \\
+&amp;+ {\beta}_5squarefeet + {\beta}_6zip
+\end{split}
+\end{align}\]</span></p>
+<p>where all variables are treated as continuous except <code>zip</code> which is treated as a discrete variable with two levels i.e.&nbsp;1060 and 1062 with the following coding:</p>
+<ul>
+<li><p><code>zip</code> <span class="math inline">\(= 0;\quad for\; 1060\)</span></p></li>
+<li><p><code>zip</code> <span class="math inline">\(= 1;\quad for\; 1062\)</span></p></li>
+</ul>
+<p>The <code>bedrooms</code> variable could also have been coded as a discrete variable however for the sake of interpretability and preserving more degrees of freedom, we include it as a continuous variable. Since <code>bedrooms</code> variable has six distinct values, we would need to create five dummy variables to code it as a discrete variable, which would lead to losing five degrees of freedom and also interpreting results for six different categories of houses i.e.&nbsp;one category for each distinct value of <code>bedrooms</code>.</p>
+<p>Keeping in view our end goal is to predict the effect of <code>distance</code> on <code>price2014</code>, we conduct the following test when fitting the regression model: <span class="math display">\[H_0:\quad \beta_1 = 0\]</span> <span class="math display">\[H_A:\quad \beta_1 \neq 0\]</span> Under the null hypotheses <span class="math inline">\(H_0\)</span>, the coefficient of <code>distance</code> <span class="math inline">\(\beta_1\)</span> is <span class="math inline">\(0\)</span> i.e.&nbsp;<code>distance</code> does not have any effect on <code>price2014</code> whereas we will reject the null if we get a <span class="math inline">\(p-value \leq \alpha = 0.05\)</span> which is our significance level. The output of the <code>summary()</code> function after fitting the model in <code>R</code> is appended below:</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="uhyijjxxqe" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#uhyijjxxqe table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#uhyijjxxqe thead, #uhyijjxxqe tbody, #uhyijjxxqe tfoot, #uhyijjxxqe tr, #uhyijjxxqe td, #uhyijjxxqe th {
+  border-style: none;
+}
+
+#uhyijjxxqe p {
+  margin: 0;
+  padding: 0;
+}
+
+#uhyijjxxqe .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#uhyijjxxqe .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#uhyijjxxqe .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#uhyijjxxqe .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_col_heading {
+  color: #FFFFFF;
+  background-color: #4F94CD;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#uhyijjxxqe .gt_column_spanner_outer {
+  color: #FFFFFF;
+  background-color: #4F94CD;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#uhyijjxxqe .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#uhyijjxxqe .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#uhyijjxxqe .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#uhyijjxxqe .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#uhyijjxxqe .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#uhyijjxxqe .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#uhyijjxxqe .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#uhyijjxxqe .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#uhyijjxxqe .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#uhyijjxxqe .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uhyijjxxqe .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#uhyijjxxqe .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#uhyijjxxqe .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#uhyijjxxqe .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uhyijjxxqe .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#uhyijjxxqe .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uhyijjxxqe .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#uhyijjxxqe .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uhyijjxxqe .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#uhyijjxxqe .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#uhyijjxxqe .gt_left {
+  text-align: left;
+}
+
+#uhyijjxxqe .gt_center {
+  text-align: center;
+}
+
+#uhyijjxxqe .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#uhyijjxxqe .gt_font_normal {
+  font-weight: normal;
+}
+
+#uhyijjxxqe .gt_font_bold {
+  font-weight: bold;
+}
+
+#uhyijjxxqe .gt_font_italic {
+  font-style: italic;
+}
+
+#uhyijjxxqe .gt_super {
+  font-size: 65%;
+}
+
+#uhyijjxxqe .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#uhyijjxxqe .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#uhyijjxxqe .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#uhyijjxxqe .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#uhyijjxxqe .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#uhyijjxxqe .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#uhyijjxxqe .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#uhyijjxxqe .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#uhyijjxxqe div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="header gt_col_headings">
+<th id="Variable" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Variable</th>
+<th id="Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
+<th id="Standard Error" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Standard Error</th>
+<th id="t-value" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">t-value</th>
+<th id="p-value" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">p-value</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Term">(Intercept)</td>
+<td class="gt_row gt_right" headers="Estimate">5.06004</td>
+<td class="gt_row gt_right" headers="StdError">0.08459</td>
+<td class="gt_row gt_right" headers="tValue">59.82118</td>
+<td class="gt_row gt_right" headers="pValue">&lt; 2e-16</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Term">distance</td>
+<td class="gt_row gt_right" headers="Estimate">−0.05936</td>
+<td class="gt_row gt_right" headers="StdError">0.02211</td>
+<td class="gt_row gt_right" headers="tValue">−2.68437</td>
+<td class="gt_row gt_right" headers="pValue">0.00855</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Term">acre</td>
+<td class="gt_row gt_right" headers="Estimate">−0.11666</td>
+<td class="gt_row gt_right" headers="StdError">0.18341</td>
+<td class="gt_row gt_right" headers="tValue">−0.63606</td>
+<td class="gt_row gt_right" headers="pValue">0.52624</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Term">bedrooms</td>
+<td class="gt_row gt_right" headers="Estimate">0.01949</td>
+<td class="gt_row gt_right" headers="StdError">0.02908</td>
+<td class="gt_row gt_right" headers="tValue">0.67026</td>
+<td class="gt_row gt_right" headers="pValue">0.50428</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Term">garage_spaces</td>
+<td class="gt_row gt_right" headers="Estimate">0.03784</td>
+<td class="gt_row gt_right" headers="StdError">0.02384</td>
+<td class="gt_row gt_right" headers="tValue">1.58723</td>
+<td class="gt_row gt_right" headers="pValue">0.11572</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Term">squarefeet</td>
+<td class="gt_row gt_right" headers="Estimate">0.38650</td>
+<td class="gt_row gt_right" headers="StdError">0.05603</td>
+<td class="gt_row gt_right" headers="tValue">6.89842</td>
+<td class="gt_row gt_right" headers="pValue">5.4e-10</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Term">factor(zip)1062</td>
+<td class="gt_row gt_right" headers="Estimate">−0.06738</td>
+<td class="gt_row gt_right" headers="StdError">0.04884</td>
+<td class="gt_row gt_right" headers="tValue">−1.37955</td>
+<td class="gt_row gt_right" headers="pValue">0.17090</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Term">Residual Standard Error</td>
+<td class="gt_row gt_right" headers="Estimate">0.18354</td>
+<td class="gt_row gt_right" headers="StdError">NA</td>
+<td class="gt_row gt_right" headers="tValue">NA</td>
+<td class="gt_row gt_right" headers="pValue">NA</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Term">Deg of Freedom</td>
+<td class="gt_row gt_right" headers="Estimate">97.00000</td>
+<td class="gt_row gt_right" headers="StdError">NA</td>
+<td class="gt_row gt_right" headers="tValue">NA</td>
+<td class="gt_row gt_right" headers="pValue">NA</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Term">Multiple R-squared</td>
+<td class="gt_row gt_right" headers="Estimate">0.71551</td>
+<td class="gt_row gt_right" headers="StdError">NA</td>
+<td class="gt_row gt_right" headers="tValue">NA</td>
+<td class="gt_row gt_right" headers="pValue">NA</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Term">Adjusted R-squared</td>
+<td class="gt_row gt_right" headers="Estimate">0.69792</td>
+<td class="gt_row gt_right" headers="StdError">NA</td>
+<td class="gt_row gt_right" headers="tValue">NA</td>
+<td class="gt_row gt_right" headers="pValue">NA</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Term">F-statistic</td>
+<td class="gt_row gt_right" headers="Estimate">40.66070</td>
+<td class="gt_row gt_right" headers="StdError">NA</td>
+<td class="gt_row gt_right" headers="tValue">NA</td>
+<td class="gt_row gt_right" headers="pValue">NA</td>
+</tr>
+</tbody><tfoot class="gt_footnotes">
+<tr class="odd">
+<td colspan="5" class="gt_footnote" style="text-align: center;"><p><strong>Table 3</strong>: Output of Linear Regression</p></td>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+</div>
+<p>To check the goodness-of-fit of our model and identify any potential problems, we turn towards diagnostic plots shown in Figure 13.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="housingprices_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In Figure 13, Plot F shows a point with a higher Cook’s distance than all the other points; this is house #89 which we identified as a potential high leverage point in the EDA section. However, since the Cook’s distance value is less than our threshold of <span class="math inline">\(1\)</span>, we do not classify it as a bad leverage point. If we look at Plot D, all the points are within the <span class="math inline">\([-3.3, 3.3]\)</span> interval which we get after setting the confidence level to <span class="math inline">\(\alpha / n\)</span> where <span class="math inline">\(\alpha = 0.05\)</span>. Hence, when we calculate the corresponding z-values they turn out to be <span class="math inline">\(z_{\alpha/(2n)} = 3.3\)</span> and <span class="math inline">\(z_{-\alpha/(2n)} = -3.3\)</span> respectively. All studentized residuals within these limits imply we do not have any outliers that are adversely affecting our model. Plot D also shows that even though the variance of the residuals is not exactly constant, it does seem fairly stable. Q-Q plot in Plot E supports normality of the residuals, there are a few points in the tails farther away from the normal line however - 1) this can be attributed to randomness and 2) almost all points are still within the global confidence interval band calculated using confidence level of <span class="math inline">\(\alpha/n\)</span> to cater for multiple testing. The house prices are assumed to be independent of each other which is appropriate since the price of one house usually does not have an effect on the price of any other house. Since the assumptions of linear regression seem to hold true, we shift our attention to answering our research question.</p>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p>The estimated coefficients of <code>bedroom</code>, and <code>garage_spaces</code> do not have significant <span class="math inline">\(p-values\)</span>. One plausible explanation for this is that the variation in the house prices explained by these variables are also captured by the <code>squarefeet</code> variable which has a highly significant <span class="math inline">\(p-value\)</span>. From their corresponding plots with <code>squarefeet</code> in Figure 11, <code>bedrooms</code> and <code>garage_spaces</code> show a positive association with <code>squarefeet</code> and have correlation values of <span class="math inline">\(0.703\)</span> and <span class="math inline">\(0.394\)</span> respectively. <code>acre</code> neither shows a clear trend in the plot with <code>squarefeet</code> nor does it have a high correlation value with it but it still has an insignificant p-value. All three of these variables do not affect our findings about the <code>distance</code> variable and therefore we leave them in the model. However, it is pertinent to highlight that the coefficient of <code>acre</code> does show unexpected behavior which suggests there are certainly more variables not present in the data set that can be used to explain this anomaly.</p>
+<p>The <code>distance</code> variable, our primary variable of concern, has an estimated coefficient of -0.05 with a <span class="math inline">\(p-value\quad 0.009 &lt; 0.05\)</span> which leads us to reject the null hypothesis <span class="math inline">\(H_0\)</span> at the <span class="math inline">\(5\%\)</span> significance level, implying that for a one unit increase in the distance from the nearest rail trail entry, the average price of the house decreases by <span class="math inline">\(0.05\%\; \pm\; 0.04\%\quad (p-value = 0.009&lt;0.05)\)</span> with 95% probability after taking into account the effect of all the other covariates. However, it is important to not confuse this association for causation since our data is collected from an observational study, not a randomized experiment.</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>Our study found that homes closer to the rail trail are worth more. For every foot nearer to the trail, a home’s value increases by about 0.05%. This means a house 1,000 feet closer could be priced around 5% higher than a similar house farther away. Larger homes also sell for more; every extra 1,000 square feet adds about 38.65% to a home’s value.</p>
+<p>For Acme Homes, this means building homes near rail trails can increase property values and profits. By adjusting home prices based on proximity to the trail, the company can sell closer homes at higher prices. Marketing the benefits of easy trail access—like walking and biking opportunities—can attract more buyers. Offering larger homes or options to expand can also boost sales. Homes near amenities like good schools, parks, and shops have higher values, so developing in areas with these features or adding community amenities can enhance property appeal.</p>
+<p>While our findings are significant, they are based on homes smaller than 0.56 acres in two specific ZIP codes, so results may not apply to larger properties or other areas. Also, since this is an observational study, we cannot confirm that being closer to the rail trail causes higher prices—only that they are related. By applying these insights, Acme Homes can attract more buyers and increase profits by focusing on properties near rail trails and amenities.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
