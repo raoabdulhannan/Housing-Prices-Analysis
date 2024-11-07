@@ -2,7 +2,7 @@
 title: "Predicting Effect of Distance from Rail Trails on House Prices"
 author: "Rao Abdul Hannan, Mark Ma"
 format:
-  pdf:
+  html:
     colorlinks: true
     message: false
 execute:
@@ -406,7 +406,7 @@ Applying the transformation stabilizes the skewness of `price2014` and therefore
 
 \begin{align}
 \begin{split}
-E(\log(price2014)) &= {\beta}_0 + {\beta}_1distance + {\beta}_2acre + {\beta}_3bedrooms + {\beta}_4garage_spaces \\
+E(\log(price2014)) &= {\beta}_0 + {\beta}_1distance + {\beta}_2acre + {\beta}_3bedrooms + {\beta}_4garagespaces \\
 &+ {\beta}_5squarefeet + {\beta}_6zip
 \end{split}
 \end{align}
